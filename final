@@ -1,0 +1,222 @@
+#include<iostream>
+#include<cctype>
+#include<ctype.h>
+#include<string>
+#include<vector>
+
+using std::cout;
+using std::endl;
+using std::string;
+using std::vector;
+
+class Person{
+
+        private:
+
+          string name, tempstat;
+          int stat, sickdays;
+          float persrisk, risksum, poprisk;
+          vector<string> days;
+
+        public:
+
+          Person() {name = "Generic Joe"; stat = 0; sickdays = 2;}
+
+          Person(string n, int s, int sds) {name = n; stat = s; sickdays = sds;}
+
+          void setid(string n) {
+            name = n;};
+
+          void setstat(int s) {
+            stat = s;};
+
+          void setpersrisk(int pr) {
+            persrisk = pr;};
+
+          void set_days(string str) {
+            days.push_back(str);};
+
+          string getid() {
+            return name;};
+
+          int getstat() {
+            return stat;};
+
+          int getpersrisk() {
+            return persrisk;};
+
+          float getrisksum() {
+            return risksum;};
+
+          string get_days(int daynum) {
+            return days[daynum];};
+
+          int get_days_lng() {
+            return days.size();};
+
+          void update() {
+            persrisk = (float) rand() / (float) RAND_MAX;
+            //poprisk = 0.3 + (((float) rand()) / (float) RAND_MAX)/5;
+            risksum = persrisk;// + poprisk;
+            if (stat == -3) {
+              sickdays -= 1;
+              if (sickdays == 0) {
+                stat = -1;
+              }
+            }
+            else if ((stat == 0) and (risksum > 0.95)) {
+              infect();
+            }
+          };
+
+          string status_string() {
+            if (stat == -3) {
+              return "sick";
+            }
+            else if (stat == -2) {
+              return "vaccinated";
+            }
+            else if (stat == -1) {
+              return "recovered";
+            }
+            else if (stat == 0) {
+              return "healthy";
+            }
+          };
+
+          void infect() {
+            stat = -3;
+          };
+
+          bool is_stable() {
+            if (stat == -1) {
+              return true;
+            }
+            else {
+              return false;
+            }
+          };
+
+          bool is_sick() {
+            if (stat == -3) {
+              return true;
+            }
+            else {
+              return false;
+            }
+          };
+
+          void vac() {
+            stat = -2;
+          };
+};
+
+string namer(int nmin, int nmax) {
+        int nmlength, j, ref;
+        char ch;
+        string nombre;
+
+        nmlength = rand() % (nmax - nmin) + nmin;
+        nombre = "";
+        for (j = 0; j < nmlength; j++) {
+          if (nombre.empty()) {
+            ref = rand() % 25 + 65;
+          }
+          else {
+            ref = rand() % 25 + 97;
+          }
+          ch = static_cast<char>(ref);
+          nombre += ch;
+        };
+        return nombre;
+};
+
+void randos(Person &curr, Person &vic) {
+
+        if ((curr.is_sick()) and (not vic.is_stable())) {
+          vic.infect();
+        }
+
+        //for co-infection
+        if ((vic.is_sick()) and (not curr.is_stable())) {
+          curr.infect();
+        }
+};
+
+void pop_status(vector<Person> &ppl) {
+
+        int m, n;
+
+        for (m = 0; m < ppl[0].get_days_lng(); m++) {
+          for (n = 0; n < ppl.size(); n++) {
+            cout << "On day " << m + 1 << ", " << ppl[n].getid() << " is " << ppl[n].get_days(m) << endl;
+          };
+        };
+};
+
+int main() {
+
+        int namemin, namemax, counter, i, j, k, m, n, victim, temp_rand, popval, nmlength, ref, days, sdays, sick_count;        string tempname, day_stat;
+        char ch;
+        vector<int> daycount;
+        vector<Person> ppl;
+        bool flag;
+
+        popval = 10000;
+        sdays = 4;
+        namemax = 9;
+        namemin = 3;
+        counter = 0;
+        sick_count = 0;
+
+        srand(time(NULL));
+
+        for (i = 0; i < popval; i++) {
+          tempname = namer(namemin, namemax);
+          Person p1(tempname, 0, sdays);
+          ppl.push_back(p1);
+        };
+
+        victim = rand() % ppl.size();
+        ppl[victim].infect();
+
+        flag = true;
+        while (flag) {
+          flag = false;
+          counter = 0;
+          for (j = 0; j < ppl.size(); j++) {
+            temp_rand = rand() % ppl.size();
+            randos(ppl[j], ppl[temp_rand]);
+            day_stat = ppl[j].status_string();
+            if (day_stat == "sick") {
+              flag = true;
+              ppl[j].set_days("sick");
+              counter += 1;
+            }
+            if (day_stat == "vaccinated") {
+              ppl[j].set_days("vaccinated");
+            }
+            if (day_stat == "recovered") {
+              ppl[j].set_days("recovered");
+            }
+            if (day_stat == "healthy") {
+              ppl[j].set_days("healthy");
+            }
+            if (flag) {
+              ppl[j].update();
+            }
+          };
+          daycount.push_back(counter);
+          cout << "Day " << daycount.size() << ": " << counter << endl;
+        };
+
+        for (k = 0; k < ppl.size(); k++) {
+          if (ppl[k].is_stable()) {
+            sick_count += 1;
+          }
+        };
+
+        cout << "Total infected: " << sick_count << endl;
+
+        return 0;
+};
